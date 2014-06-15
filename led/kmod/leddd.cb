@@ -1,0 +1,32 @@
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/gpio.h>
+#include <linux/sched.h>
+
+#define GPIO_NUM 14
+
+int Init(void)
+{
+int ret;
+int i;
+
+ret=gpio_request(GPIO_NUM,"LED");
+printk(KERN_INFO "request: %d\n",ret);
+
+
+for(i=0;i<10;i++){
+gpio_set_value(GPIO_NUM,1);
+gpio_set_value(GPIO_NUM,0);
+}
+return 0;
+}
+
+void Clean(void)
+{
+printk(KERN_INFO "bye\n");
+}
+
+module_init(Init);
+module_exit(Clean);
+

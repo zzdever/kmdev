@@ -1,0 +1,1 @@
+cmd_/media/realroot/workspace/led/kmod/leddd.ko := ld -r -m elf_i386 -T /usr/src/kernel/scripts/module-common.lds --build-id  -o /media/realroot/workspace/led/kmod/leddd.ko /media/realroot/workspace/led/kmod/leddd.o /media/realroot/workspace/led/kmod/leddd.mod.o

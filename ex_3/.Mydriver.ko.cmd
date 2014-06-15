@@ -1,0 +1,1 @@
+cmd_/media/realroot/workspace/ex_3/Mydriver.ko := ld -r -m elf_i386 -T /usr/src/kernel/scripts/module-common.lds --build-id  -o /media/realroot/workspace/ex_3/Mydriver.ko /media/realroot/workspace/ex_3/Mydriver.o /media/realroot/workspace/ex_3/Mydriver.mod.o
