@@ -46,19 +46,6 @@ int main(int argc, char *argv[])
 	}
 
 
-						ret = read_EEPROM(rdata, 1);
-						if (ret < 0)
-						{
-							printf("read() failed.\n");
-						}
-						else
-						{
-							printf("Read Data = %s\n", rdata);
-						}
-return 0;
-
-
-
 	while (1)
 	{
 		show_menu();
@@ -85,13 +72,11 @@ return 0;
 				printf("How many pages to read: ");
 				scanf("%d",&val);
 				getchar();
-printf("after scanf");
 				if ((val < 0x0000) || (val >= 0x0200))
 				{
 					printf("Invalid input...\n");
 				}
 				else {
-printf("in reading");
 					for (i=0; i<val; i++) {
 						ret = read_EEPROM(rdata, 1);
 						if (ret < 0)
