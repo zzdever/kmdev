@@ -1,3 +1,10 @@
+/*
+ * EEPROM driver with work queue
+ * yingzhemin@gmail.com
+ *
+ * Comment not relates to work queue can be foune in driver4eeprom.c
+ */
+
 #include <linux/module.h>                                                       
 #include <linux/kernel.h>                                                       
 #include <linux/fs.h>                                                           
@@ -15,54 +22,54 @@
 #include <linux/workqueue.h>                                                    
                                                                                 
 #define DEVICE_NAME "i2c_flash"  // device name to be created and registered    
-#define WRITE_WORK 1                                                            
-#define READ_WORK 2 
+#define WRITE_WORK 1  //write operation                                                          
+#define READ_WORK 2   //read operation
                                                                                 
 struct i2c_dev {                                                                
-        struct i2c_client *client;                                              
-        struct i2c_adapter *adap;                                               
-        struct cdev cdev;               /* The cdev structure */                
-        char name[20];                  /* Name of device*/                     
+        struct i2c_client *client;      // The eeprom client                          
+        struct i2c_adapter *adap;       // The eeprom adapter                    
+        struct cdev cdev;               // The cdev structure               
+        char name[20];                  // Name of device                     
 } *i2c_devp;                                                                    
                                                                                 
 static dev_t i2c_dev_number;      /* Allotted device number */                  
 struct class *i2c_dev_class;          /* Tie with the device model */           
-static struct device *i2c_dev_device;                                           
+static struct device *i2c_dev_device;                              
                                                                                 
-static struct workqueue_struct *queue=NULL;                                     
-struct work_t{                                                                  
-        struct work_struct work;                                                
-        int operation_t;                                                        
-        struct i2c_client *client;                                              
-        int count;                                                              
-        const char *buf;                                                        
+static struct workqueue_struct *queue=NULL; // The work queue                                    
+struct work_t{                             // work struct type                   
+        struct work_struct work;           // work struct                  
+        int operation_t;                   // indicate which operation to do                       
+        struct i2c_client *client;         // the eeprom client    
+        int count;                         // buffer count                 
+        const char *buf;                   // the buffer pointer                                     
 };                                                                              
-static struct work_t *work;
+static struct work_t *work;   //the work pointer
                                                                                 
-static void work_handler(struct work_struct *work)                              
+static void work_handler(struct work_struct *work) // work handler
 {                                                                               
-        struct work_t *work_=(struct work_t*)work;                              
-	char *tmp;
+        struct work_t *work_=(struct work_t*)work;  //convert work pointer type                     
+	char *tmp;  // tmp buffer
         int ret;                                                                
 
-        if(work_->operation_t==WRITE_WORK){                                     
-		tmp=memdup_user(work_->buf, work_->count);                                          
-	        ret = i2c_master_send(work_->client, tmp, work_->count);        
-		kfree(tmp);                                                           
+        if(work_->operation_t==WRITE_WORK){    //do write                                 
+		tmp=memdup_user(work_->buf, work_->count);   // copy data                                       
+	        ret = i2c_master_send(work_->client, tmp, work_->count);  //send data       
+		kfree(tmp);     // free tmp buffer      
         }                                                                       
                                                                                 
-        if(work_->operation_t==READ_WORK){                                      
-	        tmp = kmalloc(work_->count, GFP_KERNEL);                                       
+        if(work_->operation_t==READ_WORK){        // do read                              
+	        tmp = kmalloc(work_->count, GFP_KERNEL);    // allocate tmp buffer                                   
         	if (tmp == NULL)                                                        
                 	return ;                                                 
                                                                                 
-        	ret = i2c_master_recv(work_->client, tmp, work_->count);                              
+        	ret = i2c_master_recv(work_->client, tmp, work_->count);   // receive data                      
         	if (ret >= 0)                                                           
-                	ret = copy_to_user((void*)work_->buf, tmp, work_->count) ? -EFAULT : ret;            
-        	kfree(tmp);                                                             
-        }                                                                       
+                	ret = copy_to_user((void*)work_->buf, tmp, work_->count) ? -EFAULT : ret;  // copy data          
+        	kfree(tmp); // free tmp buffer
+	}                                                                       
                                                                                 
-        kfree((void*)work);                                                     
+        kfree((void*)work);   // free work struct                                   
         return;                                                                 
 } 
 
@@ -119,7 +126,7 @@ int i2c_driver_write(struct file *file, const char *buf,
         if (count > 8192)                                                       
                 count = 8192;                                                   
                                                                                 
-        work=(struct work_t*)kmalloc(sizeof(struct work_t), GFP_KERNEL);        
+        work=(struct work_t*)kmalloc(sizeof(struct work_t), GFP_KERNEL); //allocate work struct 
                                                                                 
         if(!work)                                                               
         {                                                                       
@@ -128,16 +135,16 @@ int i2c_driver_write(struct file *file, const char *buf,
         }                                                                       
                                                                                 
 	if(work_pending((struct work_struct*)work)==1)
-	{
+	{       // work not finished
 	return 0;
 	}else
 	{
-        INIT_WORK((struct work_struct*) work, work_handler);                    
-        work->operation_t=WRITE_WORK;                                           
-        work->client=client;                                                    
-        work->count=count;                                                      
-        work->buf= buf;
-        queue_work(queue,(struct work_struct*)work); 
+        INIT_WORK((struct work_struct*) work, work_handler);   // init work 
+        work->operation_t=WRITE_WORK;     //set work type     
+        work->client=client;              //set the eeprom client 
+        work->count=count;                //set the buffer count               
+        work->buf= buf;                   //set the buffer pointer
+        queue_work(queue,(struct work_struct*)work); // queue the work
 
         return 1;
 	}
@@ -361,14 +368,12 @@ int __init i2c_driver_init(void)
                                                                                 
         printk(KERN_INFO "i2c_flash driver initialized.\n");                    
                                                                                 
-        queue=create_singlethread_workqueue("i2c-driver");                      
+        queue=create_singlethread_workqueue("i2c-driver");   // init work queue 
         if(!queue){                                                             
                 printk(KERN_INFO "Work queue creation failed\n");               
                 return -1;                                                      
         }                                                                       
                                                                                 
-//        INIT_WORK(&work, work_handler);                                         
-//        schedule_work(&work);                                                   
                                                                                 
         printk(KERN_INFO "Work queue created.\n");                              
                                                                                 
@@ -377,8 +382,6 @@ int __init i2c_driver_init(void)
 /* Driver Exit */                                                               
 void __exit i2c_driver_exit(void)                                               
 {                                                                               
-printk(KERN_INFO "adapter: %ld\n", (long)i2c_devp->client->adapter);
-printk(KERN_INFO "client: %ld\n", (long)i2c_devp->client);
         if(i2c_devp->client->adapter) 
 		i2c_put_adapter(i2c_devp->client->adapter);                             
         kfree(i2c_devp->client);                                                
@@ -390,13 +393,12 @@ printk(KERN_INFO "client: %ld\n", (long)i2c_devp->client);
         device_destroy (i2c_dev_class, MKDEV(MAJOR(i2c_dev_number), 0));        
         cdev_del(&i2c_devp->cdev);                                              
         kfree(i2c_devp);                                                        
-printk(KERN_INFO "devp: %ld\n", (long)i2c_devp);
                                                                                 
         /* Destroy driver_class */                                              
         class_destroy(i2c_dev_class);                                           
                                                                                 
-	flush_workqueue(queue);
-        destroy_workqueue(queue);                                               
+	flush_workqueue(queue);   //flush work queue
+        destroy_workqueue(queue); //destroy work queue                            
                                                                                 
         printk("i2c driver removed.\n");                                        
 }                                                                               

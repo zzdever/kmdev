@@ -1,5 +1,5 @@
-obj-m+=driver4eeprom.o
-#obj-m+=wq_driver4eeprom.o
+#obj-m+=driver4eeprom.o
+obj-m+=wq_driver4eeprom.o
 
 KDIR:=/opt/clanton-full/1.4.2/sysroots/i586-poky-linux/usr/src/kernel
 #PWD:= $(shell pwd)

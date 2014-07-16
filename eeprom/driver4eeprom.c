@@ -1,3 +1,9 @@
+/*
+ * EEPROM driver 
+ * yingzhemin@gmail.com
+ *
+ */
+
 #include <linux/module.h>                                                       
 #include <linux/kernel.h>                                                       
 #include <linux/fs.h>                                                           
@@ -17,33 +23,32 @@
                                                                                 
                                                                                 
 struct i2c_dev {                                                                
-        struct i2c_client *client;                                              
-        struct i2c_adapter *adap;                                               
-        struct cdev cdev;               /* The cdev structure */                
-        char name[20];                  /* Name of device*/                     
+        struct i2c_client *client;      // The eeprom client
+        struct i2c_adapter *adap;       // The eeprom adapter                                      
+        struct cdev cdev;               // The cdev structure                
+        char name[20];                  // Name of device                   
 } *i2c_devp;                                                                    
                                                                                 
 static dev_t i2c_dev_number;      /* Allotted device number */                  
 struct class *i2c_dev_class;          /* Tie with the device model */           
 static struct device *i2c_dev_device;                                           
                                                                                 
-                                                                                
-                                                                                
 /*                                                                              
 * Open driver                                                                   
 */                                                                              
 int i2c_driver_open(struct inode *inode, struct file *file)                     
 {                                                                              
-//        struct i2c_dev *i2c_devp;                                               
                                                                                 
         /* Get the per-device structure that contains this cdev */              
         i2c_devp = container_of(inode->i_cdev, struct i2c_dev, cdev);           
                                                                                 
+	/*Get  the eeprom adapter */                                                                                
         i2c_devp->adap = kzalloc(sizeof(*(i2c_devp->adap)), GFP_KERNEL);        
         i2c_devp->adap = i2c_get_adapter(i2c_devp->adap->nr);                   
         if (!i2c_devp->adap)                                                    
                 return -ENODEV;                                                 
-                                                                                
+
+        /* Get the eeprom client */                                            
         i2c_devp->client = kzalloc(sizeof(*(i2c_devp->client)), GFP_KERNEL);    
         if (!i2c_devp->client) {                                                
                 i2c_put_adapter(i2c_devp->adap);                                
@@ -52,7 +57,9 @@ int i2c_driver_open(struct inode *inode, struct file *file)
         snprintf(i2c_devp->client->name, I2C_NAME_SIZE,\
 	"myi2c-dev%d", i2c_devp->adap->nr);                                                                     
                                                                                 
+	/* Set the eeprom adapter */
         i2c_devp->client->adapter = i2c_devp->adap;                             
+	/* Store client pointer for further use */
         file->private_data = i2c_devp->client;                                  
                                                                                 
         printk(KERN_INFO "\n%s is openning \n", i2c_devp->name);                
@@ -79,15 +86,18 @@ ssize_t i2c_driver_write(struct file *file, const char *buf,
         char *tmp;                                                              
         struct i2c_client *client = file->private_data;                         
                                                                                 
+	/* Limit the max send size */
         if (count > 8192)                                                         
                 count = 8192;                                                     
                                                                                 
+	/* Copy the data */
         tmp = memdup_user(buf, count);                                          
         if (IS_ERR(tmp))                                                        
                 return PTR_ERR(tmp);                                            
                                                                                 
+	/* Send the data */
         ret = i2c_master_send(client, tmp, count);                              
-        kfree(tmp);                                                             
+        kfree(tmp);        // free tmp buffer                                                     
         return ret;                                                             
 }                                                                               
 /*                                                                              
@@ -103,18 +113,21 @@ ssize_t i2c_driver_read(struct file *file, char *buf,
         if (count > 8192)                                                         
                 count = 8192;                                                     
           
+	/* Allocate the tmp buffer */
         tmp = kmalloc(count, GFP_KERNEL);
         if (tmp == NULL)
                 return -ENOMEM;
 
+	/* Receive the data */
         ret = i2c_master_recv(client, tmp, count);
         if (ret >= 0)
                 ret = copy_to_user(buf, tmp, count) ? -EFAULT : ret;
-        kfree(tmp);
+        kfree(tmp); // free the tmp buffer
         return ret;
 }                                                                               
                                                                                 
 
+/* ioctl of read and write, code of this function is from web */
 static noinline int i2cdev_ioctl_rdrw(struct i2c_client *client,
                 unsigned long arg)
 {
@@ -195,13 +208,13 @@ static noinline int i2cdev_ioctl_rdrw(struct i2c_client *client,
 }
 
 
+/* ioctl */
 static long i2cdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
         struct i2c_client *client = file->private_data;
-//        unsigned long funcs;
-
 
         switch (cmd) {
+	/* ioctl of I2C_SLAVE */
         case I2C_SLAVE:
         case I2C_SLAVE_FORCE:
                 if ((arg > 0x3ff) ||
@@ -213,6 +226,7 @@ static long i2cdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
                 client->addr = arg;
                 return 0;
 
+	/* ioctl of I2C read and write */
         case I2C_RDWR:
                 return i2cdev_ioctl_rdrw(client, arg);
 
@@ -236,7 +250,7 @@ static struct file_operations i2c_fops = {
                                                                                 
 };                                                                              
 
-/*
+/*  not used
 static struct i2c_driver eeprom_driver={                                        
         .driver={                                                               
         .name="i2c_flash",                                                      
@@ -288,8 +302,6 @@ int __init i2c_driver_init(void)
         i2c_dev_device= device_create(i2c_dev_class, NULL, \
 	MKDEV(MAJOR(i2c_dev_number), 0),NULL, DEVICE_NAME);                                                           
                                                                                 
-        // device_create_file(i2c_dev_device, &dev_attr_xxx);                   
-//      register_chrdev(MAJOR(i2c_dev_number),"DEVICE_NAME",&gmem_fops);        
                                                                                 
         printk(KERN_INFO "i2c_flash driver initialized.\n");                    
                                                                                 
@@ -298,6 +310,7 @@ int __init i2c_driver_init(void)
 /* Driver Exit */                                                               
 void __exit i2c_driver_exit(void)                                               
 {                                                                               
+	/* free the eeprom adapter and client */
         i2c_put_adapter(i2c_devp->client->adapter);                           
         kfree(i2c_devp->client);                                              
                                                     
