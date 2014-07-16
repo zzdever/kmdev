@@ -35,7 +35,7 @@ struct work_t{
         int operation_t;                                                        
         struct i2c_client *client;                                              
         int count;                                                              
-        char *buf;                                                        
+        const char *buf;                                                        
 };                                                                              
 static struct work_t *work;
                                                                                 
@@ -54,11 +54,11 @@ static void work_handler(struct work_struct *work)
         if(work_->operation_t==READ_WORK){                                      
 	        tmp = kmalloc(work_->count, GFP_KERNEL);                                       
         	if (tmp == NULL)                                                        
-                	return -ENOMEM;                                                 
+                	return ;                                                 
                                                                                 
         	ret = i2c_master_recv(work_->client, tmp, work_->count);                              
         	if (ret >= 0)                                                           
-                	ret = copy_to_user(work_->buf, tmp, work_->count) ? -EFAULT : ret;            
+                	ret = copy_to_user((void*)work_->buf, tmp, work_->count) ? -EFAULT : ret;            
         	kfree(tmp);                                                             
         }                                                                       
                                                                                 
@@ -114,8 +114,6 @@ int i2c_driver_close(struct inode *inode, struct file *file)
 int i2c_driver_write(struct file *file, const char *buf,                    
            size_t count, loff_t *ppos)                                          
 {                                                                               
-        int ret;                                                                
-        char *tmp;                                                              
         struct i2c_client *client = file->private_data;                         
                                                                                 
         if (count > 8192)                                                       
@@ -150,8 +148,6 @@ int i2c_driver_write(struct file *file, const char *buf,
 ssize_t i2c_driver_read(struct file *file, char *buf,                           
            size_t count, loff_t *ppos)                                          
 {                                                                               
-        int ret;                                                                
-        char *tmp;                                                              
         struct i2c_client *client = file->private_data;                         
                                                                                 
         if (count > 8192)                                                       
