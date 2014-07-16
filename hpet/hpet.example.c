@@ -279,11 +279,12 @@ hpet_fasync(int argc, const char **argv)
                 goto out;
         }
 
-        for (i = 0; i < iterations; i++) {
-                (void) pause();
-                fprintf(stderr, "hpet_fasync: count = %d\n", hpet_sigio_count);
-        }
+//        for (i = 0; i < iterations; i++) {
+//                (void) pause();
+//                fprintf(stderr, "hpet_fasync: count = %d\n", hpet_sigio_count);
+//        }
 
+for(i=0;i<10000000000;i++);
 out:
         signal(SIGIO, oldsig);
 
