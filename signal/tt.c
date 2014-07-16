@@ -96,7 +96,6 @@ void hpet_fasync(unsigned long freq, int iterations)
         }
 
 out:
-        signal(SIGIO, oldsig);
 
         if (fd >= 0)
                 close(fd);
