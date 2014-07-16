@@ -4,3 +4,4 @@ packages/
 *.o
 *.symvers
 *.order
+a.out

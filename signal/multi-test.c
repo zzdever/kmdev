@@ -31,8 +31,7 @@ static void sig_handler(int val)
 void *thread1(void *arg)
 {
 	while(1){
-//		(void)pause();
-sigwait(NULL,SIGIO);
+		(void)pause();
 		printf("Thread 1 recieved\n");
 	}
 }
@@ -75,8 +74,6 @@ int main(void)
 		fprintf(stderr,"Failed to init sig set\n");
 	if(sigaddset(&set,SIGIO)<0)
 		fprintf(stderr,"Failed to add sig\n");
-//	if(sigprocmask(SIG_BLOCK,&set,NULL)<0)
-//		fprintf(stderr,"Failed to add a block sig set\n");
 	if(pthread_sigmask(SIG_BLOCK,&set,NULL)<0)
 		fprintf(stderr,"Failed to add a block sig set\n");
 
