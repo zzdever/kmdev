@@ -45,10 +45,11 @@ int main(int argc, char *argv[])
 			case '1':
 				/* write page */
 				ret = write_EEPROM(wdata, 1);
-				if (ret <= 0)
-				{
-					printf("write() failed.\n");
-				}
+				if (ret == -1)
+					printf("write() failed, busy.\n");
+				else if(ret == -2)
+					printf("push write to work queue.\n");
+				else printf("unkown result\n");
 				break;
 			case '2':
 				/* read page */

@@ -55,12 +55,18 @@ int write_EEPROM(void *buf, int n_pages)
 		do
 		{
 			ret = write(eeprom_fd, tmp, EEPROM_ADDR_SIZE+EEPROM_PAGE_SIZE);
-			if ((ret < 0) && (errno != EREMOTEIO))
+			if ((ret < 0 ))//&& (errno != EREMOTEIO))
 			{
-				printf("Could not write data. errno=%d", errno);
+				printf("Could not write data\n");
 				return -1;
-			}			
-		} while (ret < 0);
+			}
+			if(ret==0)
+				printf("Bus busy, retrying...\n");
+			if(ret > 0){
+				printf("Write work push to queue.\n");
+				break;
+			}	
+		} while (ret == 0);  
 
 		write_pos+=EEPROM_PAGE_SIZE;
 

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 					wdata[i]=rand()%3<2?rand()%26+'A':rand()%10+'0';
 				
 				ret = write_EEPROM(wdata, 1);
-				if (ret < 0)
+				if (ret == -1 )
 				{
 					printf("write() failed.\n");
 				}
