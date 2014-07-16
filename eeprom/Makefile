@@ -25,6 +25,8 @@ tester2:
 clean:
 	rm -f *.o
 	rm -f *.ko
-	rm -f *.mod.*
 	rm -f $(APP)
+	rm -f *.mod.*
+	rm -f *.order
+	rm -f *.symvers
 
