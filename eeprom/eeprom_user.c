@@ -74,10 +74,10 @@ int write_EEPROM(void *buf, int n_pages)
 }
 
 int eeprom_prepare_msg(struct i2c_msg *msg,
-					   unsigned short slave_addr,
-					   int is_read,
-					   char *buf,
-					   int buf_len)
+		   unsigned short slave_addr,
+		   int is_read,
+		   char *buf,
+		   int buf_len)
 {
 	if (msg == NULL)
 	{

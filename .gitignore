@@ -1,1 +1,6 @@
 packages/
+.*
+*.mod.*
+*.o
+*.symvers
+*.order
