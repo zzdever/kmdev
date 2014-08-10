@@ -22,6 +22,7 @@ int open_EEPROM()
 		return -1;
 	}
 
+
 	if (ioctl(eeprom_fd, I2C_SLAVE_FORCE, EEPROM_ADDR) < 0) {
 		printf("Error while accessing EEPROM. (set slave addr)   %d\n", eeprom_fd);
 		close(eeprom_fd);

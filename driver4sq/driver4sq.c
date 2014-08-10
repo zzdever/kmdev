@@ -59,7 +59,6 @@ module_param(user_name,charp,0000);	//to get parameter from load.sh script to gr
 int gmem_driver_open(struct inode *inode, struct file *file)
 {
 	struct gmem_dev *gmem_devp;
-//	printk("\nopening\n");
 
 	/* Get the per-device structure that contains this cdev */
 	gmem_devp = container_of(inode->i_cdev, struct gmem_dev, cdev);
@@ -67,7 +66,7 @@ int gmem_driver_open(struct inode *inode, struct file *file)
 
 	/* Easy access to cmos_devp from rest of the entry points */
 	file->private_data = gmem_devp;
-	printk("\n%s is openning \n", gmem_devp->name);
+	printk(KERN_INFO "driver4sq is openning \n");
 	return 0;
 }
 
@@ -78,7 +77,7 @@ int gmem_driver_release(struct inode *inode, struct file *file)
 {
 	struct gmem_dev *gmem_devp = file->private_data;
 	
-	printk("\n%s is closing\n", gmem_devp->name);
+	printk(KERN_INFO "driver4sq is closing\n");
 	
 	return 0;
 }

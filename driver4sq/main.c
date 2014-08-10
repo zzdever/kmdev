@@ -23,6 +23,7 @@ int main(int argc, char **argv)
 
 	/* open devices */
 	fd = open(DEV_NAME, O_RDWR);
+
 	if (fd < 0 ){
 		printf("Can not open device file.\n");		
 		return 0;
